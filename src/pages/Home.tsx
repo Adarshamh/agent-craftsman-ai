@@ -11,6 +11,12 @@ const Home = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
+  const [stats, setStats] = useState({
+    tasksCompleted: 1247,
+    codeGenerated: 45.2,
+    knowledgeBase: 892,
+    successRate: 94.8
+  });
   const [recentTasks, setRecentTasks] = useState([
     { task: "Generated authentication middleware", time: "2 minutes ago", status: "success" },
     { task: "Refactored database queries", time: "15 minutes ago", status: "success" },
@@ -36,6 +42,15 @@ const Home = () => {
       
       setRecentTasks(prev => [newTask, ...prev.slice(0, 4)]);
       
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        tasksCompleted: prev.tasksCompleted + 1,
+        codeGenerated: prev.codeGenerated + (Math.random() * 2 + 0.5), // 0.5-2.5k lines
+        knowledgeBase: prev.knowledgeBase + Math.floor(Math.random() * 3 + 1), // 1-3 patterns
+        successRate: Math.min(99.9, prev.successRate + (Math.random() * 0.2))
+      }));
+      
       toast({
         title: "Task Completed",
         description: `Successfully executed using ${selectedModel}`,
@@ -58,6 +73,51 @@ const Home = () => {
     }
   };
 
+  const executeQuickAction = async (action: string) => {
+    const actionMessages = {
+      'Train Model': 'Training model with latest patterns...',
+      'Code Review': 'Analyzing codebase for improvements...',
+      'Optimize': 'Optimizing performance and efficiency...',
+      'Analytics': 'Generating performance analytics...'
+    };
+
+    toast({
+      title: `${action} Started`,
+      description: actionMessages[action as keyof typeof actionMessages],
+      duration: 2000,
+    });
+
+    // Simulate processing
+    setTimeout(() => {
+      const newTask = {
+        task: `${action} completed successfully`,
+        time: "Just now",
+        status: "success" as const
+      };
+      
+      setRecentTasks(prev => [newTask, ...prev.slice(0, 4)]);
+      
+      // Update stats based on action
+      setStats(prev => ({
+        ...prev,
+        tasksCompleted: prev.tasksCompleted + 1,
+        codeGenerated: action === 'Code Review' 
+          ? prev.codeGenerated + (Math.random() * 1 + 0.2)
+          : prev.codeGenerated + (Math.random() * 0.5),
+        knowledgeBase: action === 'Train Model'
+          ? prev.knowledgeBase + Math.floor(Math.random() * 5 + 2)
+          : prev.knowledgeBase + Math.floor(Math.random() * 2 + 1),
+        successRate: Math.min(99.9, prev.successRate + (Math.random() * 0.1))
+      }));
+      
+      toast({
+        title: `${action} Complete`,
+        description: "Results have been applied to your workspace",
+        duration: 3000,
+      });
+    }, 1500 + Math.random() * 2000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -74,39 +134,39 @@ const Home = () => {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="hover-scale">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Tasks Completed</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,247</div>
+            <div className="text-2xl font-bold">{stats.tasksCompleted.toLocaleString()}</div>
             <p className="text-xs text-green-600">+12% from last week</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover-scale">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Code Generated</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45.2k</div>
+            <div className="text-2xl font-bold">{stats.codeGenerated.toFixed(1)}k</div>
             <p className="text-xs text-muted-foreground">lines of code</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover-scale">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Knowledge Base</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">892</div>
+            <div className="text-2xl font-bold">{stats.knowledgeBase}</div>
             <p className="text-xs text-muted-foreground">stored patterns</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="hover-scale">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Success Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">94.8%</div>
+            <div className="text-2xl font-bold">{stats.successRate.toFixed(1)}%</div>
             <p className="text-xs text-green-600">improving daily</p>
           </CardContent>
         </Card>
@@ -203,19 +263,35 @@ const Home = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col hover-scale"
+              onClick={() => executeQuickAction('Train Model')}
+            >
               <Brain className="h-6 w-6 mb-2" />
               <span>Train Model</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col hover-scale"
+              onClick={() => executeQuickAction('Code Review')}
+            >
               <Code2 className="h-6 w-6 mb-2" />
               <span>Code Review</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col hover-scale"
+              onClick={() => executeQuickAction('Optimize')}
+            >
               <Sparkles className="h-6 w-6 mb-2" />
               <span>Optimize</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col hover-scale"
+              onClick={() => executeQuickAction('Analytics')}
+            >
               <Activity className="h-6 w-6 mb-2" />
               <span>Analytics</span>
             </Button>

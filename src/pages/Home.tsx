@@ -3,12 +3,60 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { Play, Sparkles, Activity, Brain, Code2 } from "lucide-react";
+import { Play, Sparkles, Activity, Brain, Code2, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 const Home = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [recentTasks, setRecentTasks] = useState([
+    { task: "Generated authentication middleware", time: "2 minutes ago", status: "success" },
+    { task: "Refactored database queries", time: "15 minutes ago", status: "success" },
+    { task: "Created API documentation", time: "1 hour ago", status: "success" },
+    { task: "Fixed TypeScript errors", time: "2 hours ago", status: "warning" },
+    { task: "Built user dashboard", time: "3 hours ago", status: "success" },
+  ]);
+  const { toast } = useToast();
+
+  const executeTask = async () => {
+    setIsExecuting(true);
+    
+    try {
+      // Simulate AI task execution
+      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
+      
+      // Add to recent tasks
+      const newTask = {
+        task: prompt.length > 50 ? prompt.slice(0, 47) + "..." : prompt,
+        time: "Just now",
+        status: Math.random() > 0.1 ? "success" : "warning"
+      };
+      
+      setRecentTasks(prev => [newTask, ...prev.slice(0, 4)]);
+      
+      toast({
+        title: "Task Completed",
+        description: `Successfully executed using ${selectedModel}`,
+        duration: 3000,
+      });
+      
+      // Clear form
+      setPrompt("");
+      setSelectedModel("");
+      
+    } catch (error) {
+      toast({
+        title: "Task Failed",
+        description: "An error occurred while executing the task",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -102,9 +150,17 @@ const Home = () => {
               />
             </div>
             
-            <Button className="w-full" disabled={!prompt || !selectedModel}>
-              <Play className="h-4 w-4 mr-2" />
-              Execute Task
+            <Button 
+              className="w-full" 
+              disabled={!prompt || !selectedModel || isExecuting}
+              onClick={executeTask}
+            >
+              {isExecuting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4 mr-2" />
+              )}
+              {isExecuting ? "Executing..." : "Execute Task"}
             </Button>
           </CardContent>
         </Card>
@@ -119,17 +175,13 @@ const Home = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { task: "Generated authentication middleware", time: "2 minutes ago", status: "success" },
-                { task: "Refactored database queries", time: "15 minutes ago", status: "success" },
-                { task: "Created API documentation", time: "1 hour ago", status: "success" },
-                { task: "Fixed TypeScript errors", time: "2 hours ago", status: "warning" },
-                { task: "Built user dashboard", time: "3 hours ago", status: "success" },
-              ].map((item, index) => (
+              {recentTasks.map((item, index) => (
                 <div key={index} className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-                  <div className={`h-2 w-2 rounded-full ${
-                    item.status === 'success' ? 'bg-green-500' : 'bg-yellow-500'
-                  }`} />
+                  {item.status === 'success' ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-yellow-500" />
+                  )}
                   <div className="flex-1">
                     <p className="text-sm font-medium">{item.task}</p>
                     <p className="text-xs text-muted-foreground">{item.time}</p>

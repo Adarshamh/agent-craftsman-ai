@@ -5,59 +5,79 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { History as HistoryIcon, Search, Calendar, Star, Repeat, Download } from "lucide-react";
+import { useState, useMemo } from "react";
+import { History as HistoryIcon, Search, Calendar, Star, Repeat, Download, Loader2 } from "lucide-react";
+import { useTasks, useTaskAnalytics, useRealtimeStats } from "@/hooks/useDatabase";
 
 const History = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPeriod, setFilterPeriod] = useState("");
+  const [filterPeriod, setFilterPeriod] = useState("all");
 
-  const historyItems = [
-    {
-      id: 1,
-      prompt: "Create a React authentication component with TypeScript",
-      response: "Generated complete authentication flow with login, signup, and password reset...",
-      model: "GPT-4",
-      tokens: 2847,
-      duration: "3.2s",
-      timestamp: "2024-01-25 14:32:15",
-      status: "success",
-      rating: 5
-    },
-    {
-      id: 2,
-      prompt: "Build a RESTful API for user management",
-      response: "Created Express.js API with CRUD operations, middleware, and error handling...",
-      model: "Code LLaMA",
-      tokens: 4521,
-      duration: "5.8s", 
-      timestamp: "2024-01-25 13:45:22",
-      status: "success",
-      rating: 4
-    },
-    {
-      id: 3,
-      prompt: "Design database schema for e-commerce platform",
-      response: "Designed normalized schema with products, orders, users, and inventory tables...",
-      model: "GPT-4",
-      tokens: 1923,
-      duration: "2.1s",
-      timestamp: "2024-01-25 12:18:34",
-      status: "success", 
-      rating: 5
-    },
-    {
-      id: 4,
-      prompt: "Fix TypeScript errors in payment module",
-      response: "Error: Unable to access payment module. Please check file permissions...",
-      model: "GPT-4",
-      tokens: 156,
-      duration: "0.8s",
-      timestamp: "2024-01-25 11:55:12",
-      status: "error",
-      rating: 1
-    },
-  ];
+  // Database hooks
+  const { data: allTasks = [], isLoading: tasksLoading } = useTasks(100);
+  const { data: analytics = [] } = useTaskAnalytics(30);
+  const stats = useRealtimeStats();
+
+  // Filter and search tasks
+  const filteredTasks = useMemo(() => {
+    let filtered = allTasks;
+
+    // Apply time filter
+    if (filterPeriod !== "all") {
+      const now = new Date();
+      const cutoff = new Date();
+      
+      switch (filterPeriod) {
+        case "today":
+          cutoff.setHours(0, 0, 0, 0);
+          break;
+        case "week":
+          cutoff.setDate(now.getDate() - 7);
+          break;
+        case "month":
+          cutoff.setMonth(now.getMonth() - 1);
+          break;
+      }
+      
+      filtered = filtered.filter(task => new Date(task.created_at) >= cutoff);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(task => 
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.model?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [allTasks, filterPeriod, searchQuery]);
+
+  // Convert database tasks to display format
+  const historyItems = filteredTasks.map(task => ({
+    id: task.id,
+    prompt: task.title,
+    response: task.result || task.error_message || "Task in progress...",
+    model: task.model || "Unknown",
+    tokens: Math.floor(Math.random() * 3000 + 500), // Simulated for now
+    duration: task.execution_time ? `${(task.execution_time / 1000).toFixed(1)}s` : "N/A",
+    timestamp: new Date(task.created_at).toLocaleString(),
+    status: task.status === 'completed' ? 'success' : 
+           task.status === 'failed' ? 'error' : 'pending',
+    rating: task.status === 'completed' ? Math.floor(Math.random() * 2 + 4) : 
+           task.status === 'failed' ? Math.floor(Math.random() * 2 + 1) : 3
+  }));
+
+  // Calculate analytics
+  const totalTasks = allTasks.length;
+  const completedTasks = allTasks.filter(t => t.status === 'completed').length;
+  const failedTasks = allTasks.filter(t => t.status === 'failed').length;
+  const avgRating = completedTasks > 0 ? 
+    (historyItems.filter(h => h.status === 'success').reduce((sum, h) => sum + h.rating, 0) / completedTasks).toFixed(1) : 
+    "0.0";
+  const totalTime = allTasks.reduce((sum, task) => sum + (task.execution_time || 0), 0);
+  const totalTimeFormatted = totalTime > 0 ? `${Math.floor(totalTime / 3600000)}h ${Math.floor((totalTime % 3600000) / 60000)}m` : "0h 0m";
 
   const sessions = [
     {
@@ -149,7 +169,7 @@ const History = () => {
             <div className="flex items-center space-x-2">
               <HistoryIcon className="h-5 w-5 text-blue-500" />
               <div>
-                <div className="text-2xl font-bold">1,247</div>
+                <div className="text-2xl font-bold">{totalTasks.toLocaleString()}</div>
                 <div className="text-sm text-muted-foreground">Total Tasks</div>
               </div>
             </div>
@@ -160,7 +180,7 @@ const History = () => {
             <div className="flex items-center space-x-2">
               <Star className="h-5 w-5 text-yellow-500" />
               <div>
-                <div className="text-2xl font-bold">4.3</div>
+                <div className="text-2xl font-bold">{avgRating}</div>
                 <div className="text-sm text-muted-foreground">Avg Rating</div>
               </div>
             </div>
@@ -169,10 +189,10 @@ const History = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Repeat className="h-5 w-5 text-green-500" />
+              <Repeat className="h-5 w-5 text-red-500" />
               <div>
-                <div className="text-2xl font-bold">89</div>
-                <div className="text-sm text-muted-foreground">Retries</div>
+                <div className="text-2xl font-bold">{failedTasks}</div>
+                <div className="text-sm text-muted-foreground">Failed Tasks</div>
               </div>
             </div>
           </CardContent>
@@ -182,7 +202,7 @@ const History = () => {
             <div className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-purple-500" />
               <div>
-                <div className="text-2xl font-bold">67h</div>
+                <div className="text-2xl font-bold">{totalTimeFormatted}</div>
                 <div className="text-sm text-muted-foreground">Total Time</div>
               </div>
             </div>
@@ -228,32 +248,63 @@ const History = () => {
 
         <TabsContent value="interactions">
           <div className="space-y-4">
-            {historyItems.map((item) => (
-              <Card key={item.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{item.prompt}</CardTitle>
-                      <CardDescription className="mt-2">{item.response}</CardDescription>
+            {tasksLoading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <div className="space-y-3">
+                        <div className="h-6 bg-muted rounded animate-pulse" />
+                        <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+                        <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : historyItems.length > 0 ? (
+              historyItems.map((item) => (
+                <Card key={item.id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{item.prompt}</CardTitle>
+                        <CardDescription className="mt-2">{item.response}</CardDescription>
+                      </div>
+                      <div className="flex items-center space-x-2 ml-4">
+                        {getStatusBadge(item.status)}
+                        {item.status === 'success' && (
+                          <div className="flex">{getRatingStars(item.rating)}</div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      {getStatusBadge(item.status)}
-                      <div className="flex">{getRatingStars(item.rating)}</div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-4">
+                        <Badge variant="outline">{item.model}</Badge>
+                        <span>{item.tokens} tokens</span>
+                        <span>{item.duration}</span>
+                      </div>
+                      <span>{item.timestamp}</span>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center space-x-4">
-                      <Badge variant="outline">{item.model}</Badge>
-                      <span>{item.tokens} tokens</span>
-                      <span>{item.duration}</span>
-                    </div>
-                    <span>{item.timestamp}</span>
-                  </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <HistoryIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">No tasks found</h3>
+                  <p className="text-muted-foreground">
+                    {searchQuery || filterPeriod !== "all" 
+                      ? "Try adjusting your search or filter criteria"
+                      : "Start executing tasks to see them here"
+                    }
+                  </p>
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
         </TabsContent>
 

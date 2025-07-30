@@ -4,64 +4,118 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Play, Sparkles, Activity, Brain, Code2, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { 
+  useTasks, 
+  useCreateTask, 
+  useUpdateTask, 
+  useRealtimeStats,
+  useAddKnowledgePattern 
+} from "@/hooks/useDatabase";
 
 const Home = () => {
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
-  const [stats, setStats] = useState({
-    tasksCompleted: 1247,
-    codeGenerated: 45.2,
-    knowledgeBase: 892,
-    successRate: 94.8
-  });
-  const [recentTasks, setRecentTasks] = useState([
-    { task: "Generated authentication middleware", time: "2 minutes ago", status: "success" },
-    { task: "Refactored database queries", time: "15 minutes ago", status: "success" },
-    { task: "Created API documentation", time: "1 hour ago", status: "success" },
-    { task: "Fixed TypeScript errors", time: "2 hours ago", status: "warning" },
-    { task: "Built user dashboard", time: "3 hours ago", status: "success" },
-  ]);
   const { toast } = useToast();
 
+  // Database hooks
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks(10);
+  const createTaskMutation = useCreateTask();
+  const updateTaskMutation = useUpdateTask();
+  const addKnowledgePatternMutation = useAddKnowledgePattern();
+  const stats = useRealtimeStats();
+
+  // Convert database tasks to display format
+  const recentTasks = tasks.map(task => ({
+    id: task.id,
+    task: task.title,
+    time: getRelativeTime(task.created_at),
+    status: task.status === 'completed' ? 'success' : 
+           task.status === 'failed' ? 'error' : 'pending'
+  }));
+
+  // Helper function to format relative time
+  function getRelativeTime(dateString: string) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  }
+
   const executeTask = async () => {
+    if (!prompt || !selectedModel) return;
+    
     setIsExecuting(true);
     
     try {
+      // Create task in database
+      const task = await createTaskMutation.mutateAsync({
+        title: prompt.length > 50 ? prompt.slice(0, 47) + "..." : prompt,
+        description: prompt,
+        model: selectedModel,
+        status: 'executing'
+      });
+
       // Simulate AI task execution
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
+      const executionTime = 2000 + Math.random() * 3000;
+      await new Promise(resolve => setTimeout(resolve, executionTime));
       
-      // Add to recent tasks
-      const newTask = {
-        task: prompt.length > 50 ? prompt.slice(0, 47) + "..." : prompt,
-        time: "Just now",
-        status: Math.random() > 0.1 ? "success" : "warning"
-      };
+      // Simulate success/failure
+      const isSuccess = Math.random() > 0.1;
+      const codeGenerated = Math.floor(Math.random() * 500 + 100); // 100-600 lines
       
-      setRecentTasks(prev => [newTask, ...prev.slice(0, 4)]);
-      
-      // Update stats
-      setStats(prev => ({
-        ...prev,
-        tasksCompleted: prev.tasksCompleted + 1,
-        codeGenerated: prev.codeGenerated + (Math.random() * 2 + 0.5), // 0.5-2.5k lines
-        knowledgeBase: prev.knowledgeBase + Math.floor(Math.random() * 3 + 1), // 1-3 patterns
-        successRate: Math.min(99.9, prev.successRate + (Math.random() * 0.2))
-      }));
+      // Update task with results
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        updates: {
+          status: isSuccess ? 'completed' : 'failed',
+          result: isSuccess ? 'Task completed successfully' : undefined,
+          error_message: isSuccess ? undefined : 'Simulated execution error',
+          execution_time: Math.floor(executionTime),
+          code_generated: isSuccess ? codeGenerated : 0
+        }
+      });
+
+      // Add knowledge pattern if successful
+      if (isSuccess) {
+        await addKnowledgePatternMutation.mutateAsync({
+          pattern_type: selectedModel,
+          pattern_data: {
+            prompt: prompt,
+            model: selectedModel,
+            success: true,
+            code_lines: codeGenerated
+          },
+          usage_count: 1
+        });
+      }
       
       toast({
-        title: "Task Completed",
-        description: `Successfully executed using ${selectedModel}`,
+        title: isSuccess ? "Task Completed" : "Task Failed",
+        description: isSuccess 
+          ? `Successfully executed using ${selectedModel}. Generated ${codeGenerated} lines of code.`
+          : "Task execution failed. Please try again.",
+        variant: isSuccess ? "default" : "destructive",
         duration: 3000,
       });
       
-      // Clear form
-      setPrompt("");
-      setSelectedModel("");
+      // Clear form only on success
+      if (isSuccess) {
+        setPrompt("");
+        setSelectedModel("");
+      }
       
     } catch (error) {
+      console.error('Task execution error:', error);
       toast({
         title: "Task Failed",
         description: "An error occurred while executing the task",
@@ -87,35 +141,61 @@ const Home = () => {
       duration: 2000,
     });
 
-    // Simulate processing
-    setTimeout(() => {
-      const newTask = {
-        task: `${action} completed successfully`,
-        time: "Just now",
-        status: "success" as const
-      };
+    try {
+      // Create quick action task
+      const task = await createTaskMutation.mutateAsync({
+        title: `${action} - Quick Action`,
+        description: actionMessages[action as keyof typeof actionMessages],
+        model: 'system',
+        status: 'executing'
+      });
+
+      // Simulate processing
+      const executionTime = 1500 + Math.random() * 2000;
+      await new Promise(resolve => setTimeout(resolve, executionTime));
       
-      setRecentTasks(prev => [newTask, ...prev.slice(0, 4)]);
-      
-      // Update stats based on action
-      setStats(prev => ({
-        ...prev,
-        tasksCompleted: prev.tasksCompleted + 1,
-        codeGenerated: action === 'Code Review' 
-          ? prev.codeGenerated + (Math.random() * 1 + 0.2)
-          : prev.codeGenerated + (Math.random() * 0.5),
-        knowledgeBase: action === 'Train Model'
-          ? prev.knowledgeBase + Math.floor(Math.random() * 5 + 2)
-          : prev.knowledgeBase + Math.floor(Math.random() * 2 + 1),
-        successRate: Math.min(99.9, prev.successRate + (Math.random() * 0.1))
-      }));
+      const codeGenerated = action === 'Code Review' 
+        ? Math.floor(Math.random() * 200 + 50)
+        : Math.floor(Math.random() * 100 + 20);
+
+      // Update task as completed
+      await updateTaskMutation.mutateAsync({
+        id: task.id,
+        updates: {
+          status: 'completed',
+          result: `${action} completed successfully`,
+          execution_time: Math.floor(executionTime),
+          code_generated: codeGenerated
+        }
+      });
+
+      // Add knowledge pattern for training
+      if (action === 'Train Model') {
+        await addKnowledgePatternMutation.mutateAsync({
+          pattern_type: 'training',
+          pattern_data: {
+            action: action,
+            model_improvements: Math.floor(Math.random() * 10 + 5),
+            patterns_learned: Math.floor(Math.random() * 5 + 2)
+          },
+          usage_count: 1
+        });
+      }
       
       toast({
         title: `${action} Complete`,
         description: "Results have been applied to your workspace",
         duration: 3000,
       });
-    }, 1500 + Math.random() * 2000);
+    } catch (error) {
+      console.error('Quick action error:', error);
+      toast({
+        title: `${action} Failed`,
+        description: "An error occurred during execution",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   };
 
   return (
@@ -235,19 +315,35 @@ const Home = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentTasks.map((item, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
-                  {item.status === 'success' ? (
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <AlertCircle className="h-4 w-4 text-yellow-500" />
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{item.task}</p>
-                    <p className="text-xs text-muted-foreground">{item.time}</p>
-                  </div>
+              {tasksLoading ? (
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-16 bg-muted/50 rounded-lg animate-pulse" />
+                  ))}
                 </div>
-              ))}
+              ) : recentTasks.length > 0 ? (
+                recentTasks.map((item, index) => (
+                  <div key={item.id || index} className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                    {item.status === 'success' ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : item.status === 'error' ? (
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+                    )}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{item.task}</p>
+                      <p className="text-xs text-muted-foreground">{item.time}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No recent tasks</p>
+                  <p className="text-xs">Execute a task to see activity here</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

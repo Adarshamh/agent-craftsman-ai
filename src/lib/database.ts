@@ -36,6 +36,71 @@ export interface UserStats {
   last_updated: string
 }
 
+// Monitoring Types
+export interface ExecutionLog {
+  id: string
+  user_id: string
+  task_id?: string
+  log_level: 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+  message: string
+  metadata: any
+  component?: string
+  execution_context: any
+  created_at: string
+}
+
+export interface SystemMetric {
+  id: string
+  user_id: string
+  metric_type: string
+  metric_value: number
+  metric_unit?: string
+  component?: string
+  metadata: any
+  created_at: string
+}
+
+export interface PerformanceLog {
+  id: string
+  user_id: string
+  operation_type: string
+  operation_name: string
+  duration_ms: number
+  status: 'success' | 'error' | 'timeout'
+  error_details?: string
+  input_size?: number
+  output_size?: number
+  metadata: any
+  created_at: string
+}
+
+export interface ErrorLog {
+  id: string
+  user_id: string
+  error_type: string
+  error_message: string
+  stack_trace?: string
+  component?: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  resolved: boolean
+  resolution_notes?: string
+  metadata: any
+  created_at: string
+  resolved_at?: string
+}
+
+export interface SessionLog {
+  id: string
+  user_id: string
+  session_id: string
+  action: string
+  page_url?: string
+  user_agent?: string
+  ip_address?: string
+  metadata: any
+  created_at: string
+}
+
 // Task Operations
 export const createTask = async (taskData: Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
   const { data: { user } } = await supabase.auth.getUser()
@@ -166,4 +231,290 @@ export const getTaskAnalytics = async (days = 7) => {
 
   if (error) throw error
   return data || []
+}
+
+// ============= MONITORING OPERATIONS =============
+
+// Execution Logging
+export const logExecution = async (logData: Omit<ExecutionLog, 'id' | 'user_id' | 'created_at'>) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const { data, error } = await supabase
+    .from('execution_logs')
+    .insert({
+      ...logData,
+      user_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const getExecutionLogs = async (limit = 50, component?: string, logLevel?: string) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  let query = supabase
+    .from('execution_logs')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (component) query = query.eq('component', component)
+  if (logLevel) query = query.eq('log_level', logLevel)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+// System Metrics
+export const recordSystemMetric = async (metricData: Omit<SystemMetric, 'id' | 'user_id' | 'created_at'>) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const { data, error } = await supabase
+    .from('system_metrics')
+    .insert({
+      ...metricData,
+      user_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const getSystemMetrics = async (metricType?: string, hours = 24) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const startTime = new Date()
+  startTime.setHours(startTime.getHours() - hours)
+
+  let query = supabase
+    .from('system_metrics')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('created_at', startTime.toISOString())
+    .order('created_at', { ascending: true })
+
+  if (metricType) query = query.eq('metric_type', metricType)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+// Performance Logging
+export const logPerformance = async (performanceData: Omit<PerformanceLog, 'id' | 'user_id' | 'created_at'>) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const { data, error } = await supabase
+    .from('performance_logs')
+    .insert({
+      ...performanceData,
+      user_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const getPerformanceLogs = async (operationType?: string, limit = 100) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  let query = supabase
+    .from('performance_logs')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (operationType) query = query.eq('operation_type', operationType)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+// Error Logging
+export const logError = async (errorData: Omit<ErrorLog, 'id' | 'user_id' | 'created_at'>) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const { data, error } = await supabase
+    .from('error_logs')
+    .insert({
+      ...errorData,
+      user_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const getErrorLogs = async (severity?: string, resolved?: boolean, limit = 50) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  let query = supabase
+    .from('error_logs')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (severity) query = query.eq('severity', severity)
+  if (resolved !== undefined) query = query.eq('resolved', resolved)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+export const resolveError = async (id: string, resolutionNotes?: string) => {
+  const { data, error } = await supabase
+    .from('error_logs')
+    .update({
+      resolved: true,
+      resolution_notes: resolutionNotes,
+      resolved_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+// Session Logging
+export const logSession = async (sessionData: Omit<SessionLog, 'id' | 'user_id' | 'created_at'>) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  const { data, error } = await supabase
+    .from('session_logs')
+    .insert({
+      ...sessionData,
+      user_id: user.id
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export const getSessionLogs = async (sessionId?: string, limit = 100) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User not authenticated')
+
+  let query = supabase
+    .from('session_logs')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (sessionId) query = query.eq('session_id', sessionId)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+// Utility Functions for Monitoring
+export const createPerformanceWrapper = <T extends (...args: any[]) => Promise<any>>(
+  fn: T,
+  operationType: string,
+  operationName: string
+): T => {
+  return ((...args: Parameters<T>) => {
+    const startTime = Date.now()
+    
+    return fn(...args).then(
+      (result) => {
+        const duration = Date.now() - startTime
+        logPerformance({
+          operation_type: operationType,
+          operation_name: operationName,
+          duration_ms: duration,
+          status: 'success',
+          input_size: JSON.stringify(args).length,
+          output_size: JSON.stringify(result).length,
+          metadata: { args_count: args.length }
+        }).catch(console.error)
+        return result
+      },
+      (error) => {
+        const duration = Date.now() - startTime
+        logPerformance({
+          operation_type: operationType,
+          operation_name: operationName,
+          duration_ms: duration,
+          status: 'error',
+          error_details: error.message,
+          input_size: JSON.stringify(args).length,
+          metadata: { args_count: args.length }
+        }).catch(console.error)
+        throw error
+      }
+    )
+  }) as T
+}
+
+export const logger = {
+  debug: (message: string, component?: string, metadata?: any, taskId?: string) =>
+    logExecution({ log_level: 'debug', message, component, metadata: metadata || {}, execution_context: {}, task_id: taskId }),
+  
+  info: (message: string, component?: string, metadata?: any, taskId?: string) =>
+    logExecution({ log_level: 'info', message, component, metadata: metadata || {}, execution_context: {}, task_id: taskId }),
+  
+  warn: (message: string, component?: string, metadata?: any, taskId?: string) =>
+    logExecution({ log_level: 'warn', message, component, metadata: metadata || {}, execution_context: {}, task_id: taskId }),
+  
+  error: (message: string, component?: string, metadata?: any, taskId?: string, errorDetails?: any) => {
+    // Log to execution logs
+    logExecution({ log_level: 'error', message, component, metadata: metadata || {}, execution_context: errorDetails || {}, task_id: taskId })
+    
+    // Also log to error logs for centralized error tracking
+    logError({
+      error_type: 'application_error',
+      error_message: message,
+      component,
+      severity: 'medium',
+      resolved: false,
+      stack_trace: errorDetails?.stack,
+      metadata: metadata || {}
+    })
+  },
+  
+  fatal: (message: string, component?: string, metadata?: any, taskId?: string, errorDetails?: any) => {
+    // Log to execution logs
+    logExecution({ log_level: 'fatal', message, component, metadata: metadata || {}, execution_context: errorDetails || {}, task_id: taskId })
+    
+    // Also log to error logs for centralized error tracking
+    logError({
+      error_type: 'fatal_error',
+      error_message: message,
+      component,
+      severity: 'critical',
+      resolved: false,
+      stack_trace: errorDetails?.stack,
+      metadata: metadata || {}
+    })
+  }
 }

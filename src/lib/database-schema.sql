@@ -145,3 +145,138 @@ BEGIN
     RETURN success_rate;
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============= MONITORING SCHEMA =============
+
+-- Execution logs table for real-time monitoring
+CREATE TABLE IF NOT EXISTS execution_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,
+    log_level VARCHAR(20) NOT NULL CHECK (log_level IN ('debug', 'info', 'warn', 'error', 'fatal')),
+    message TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}',
+    component VARCHAR(100), -- e.g., 'prompt_studio', 'codegen_lab', 'debug_console'
+    execution_context JSONB DEFAULT '{}', -- context data like function name, line number, etc.
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- System metrics table for performance monitoring
+CREATE TABLE IF NOT EXISTS system_metrics (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    metric_type VARCHAR(50) NOT NULL, -- e.g., 'cpu_usage', 'memory_usage', 'response_time'
+    metric_value DECIMAL(10,4) NOT NULL,
+    metric_unit VARCHAR(20), -- e.g., 'percent', 'ms', 'bytes'
+    component VARCHAR(100), -- component being measured
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Performance tracking table for API and database operations
+CREATE TABLE IF NOT EXISTS performance_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    operation_type VARCHAR(100) NOT NULL, -- e.g., 'api_request', 'db_query', 'code_generation'
+    operation_name VARCHAR(200) NOT NULL,
+    duration_ms INTEGER NOT NULL,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('success', 'error', 'timeout')),
+    error_details TEXT,
+    input_size INTEGER, -- size of input data
+    output_size INTEGER, -- size of output data
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Error tracking table for centralized error management
+CREATE TABLE IF NOT EXISTS error_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    error_type VARCHAR(100) NOT NULL,
+    error_message TEXT NOT NULL,
+    stack_trace TEXT,
+    component VARCHAR(100),
+    severity VARCHAR(20) NOT NULL CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+    resolved BOOLEAN DEFAULT FALSE,
+    resolution_notes TEXT,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    resolved_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Session tracking for user activity monitoring
+CREATE TABLE IF NOT EXISTS session_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    session_id VARCHAR(255) NOT NULL,
+    action VARCHAR(100) NOT NULL, -- e.g., 'login', 'logout', 'page_view', 'task_created'
+    page_url VARCHAR(500),
+    user_agent TEXT,
+    ip_address INET,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS for monitoring tables
+ALTER TABLE execution_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE performance_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE error_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE session_logs ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for monitoring tables
+CREATE POLICY "Users can view their own execution logs" ON execution_logs
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own execution logs" ON execution_logs
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own system metrics" ON system_metrics
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own system metrics" ON system_metrics
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own performance logs" ON performance_logs
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own performance logs" ON performance_logs
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own error logs" ON error_logs
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own error logs" ON error_logs
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own error logs" ON error_logs
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own session logs" ON session_logs
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own session logs" ON session_logs
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Indexes for monitoring tables performance
+CREATE INDEX IF NOT EXISTS idx_execution_logs_user_id_created_at ON execution_logs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_execution_logs_level ON execution_logs(log_level);
+CREATE INDEX IF NOT EXISTS idx_execution_logs_component ON execution_logs(component);
+CREATE INDEX IF NOT EXISTS idx_execution_logs_task_id ON execution_logs(task_id);
+
+CREATE INDEX IF NOT EXISTS idx_system_metrics_user_id_created_at ON system_metrics(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_system_metrics_type ON system_metrics(metric_type);
+CREATE INDEX IF NOT EXISTS idx_system_metrics_component ON system_metrics(component);
+
+CREATE INDEX IF NOT EXISTS idx_performance_logs_user_id_created_at ON performance_logs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_performance_logs_operation_type ON performance_logs(operation_type);
+CREATE INDEX IF NOT EXISTS idx_performance_logs_status ON performance_logs(status);
+
+CREATE INDEX IF NOT EXISTS idx_error_logs_user_id_created_at ON error_logs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_error_logs_severity ON error_logs(severity);
+CREATE INDEX IF NOT EXISTS idx_error_logs_resolved ON error_logs(resolved);
+CREATE INDEX IF NOT EXISTS idx_error_logs_component ON error_logs(component);
+
+CREATE INDEX IF NOT EXISTS idx_session_logs_user_id_created_at ON session_logs(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_session_logs_session_id ON session_logs(session_id);
+CREATE INDEX IF NOT EXISTS idx_session_logs_action ON session_logs(action);

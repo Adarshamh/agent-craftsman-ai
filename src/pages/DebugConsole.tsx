@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
-import { Bug, AlertTriangle, Info, CheckCircle, X, RefreshCw, Download, Activity, Clock, Zap, AlertCircle, Gauge } from "lucide-react";
+import { Bug, AlertTriangle, Info, CheckCircle, X, RefreshCw, Download, Activity, Clock, Zap, AlertCircle, Gauge, BarChart3 } from "lucide-react";
 import { 
   useExecutionLogs, 
   useSystemMetrics, 
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { PerformanceMetrics } from "@/components/PerformanceMetrics";
 import { AlertSystem } from "@/components/AlertSystem";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 
 const DebugConsole = () => {
   const [selectedComponent, setSelectedComponent] = useState<string | undefined>(undefined);
@@ -222,6 +223,10 @@ const DebugConsole = () => {
           <TabsTrigger value="monitoring">
             <Gauge className="h-4 w-4 mr-2" />
             Live Monitoring
+          </TabsTrigger>
+          <TabsTrigger value="analytics">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
           </TabsTrigger>
           <TabsTrigger value="metrics">
             <Zap className="h-4 w-4 mr-2" />
@@ -477,6 +482,10 @@ const DebugConsole = () => {
 
         <TabsContent value="monitoring">
           <PerformanceMetrics />
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <AnalyticsDashboard />
         </TabsContent>
 
         <TabsContent value="metrics">

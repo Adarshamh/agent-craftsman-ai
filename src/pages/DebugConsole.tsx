@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
-import { Bug, AlertTriangle, Info, CheckCircle, X, RefreshCw, Download, Activity, Clock, Zap, AlertCircle } from "lucide-react";
+import { Bug, AlertTriangle, Info, CheckCircle, X, RefreshCw, Download, Activity, Clock, Zap, AlertCircle, Gauge } from "lucide-react";
 import { 
   useExecutionLogs, 
   useSystemMetrics, 
@@ -15,6 +15,8 @@ import {
 } from "@/hooks/useMonitoring";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { PerformanceMetrics } from "@/components/PerformanceMetrics";
+import { AlertSystem } from "@/components/AlertSystem";
 
 const DebugConsole = () => {
   const [selectedComponent, setSelectedComponent] = useState<string | undefined>(undefined);
@@ -216,6 +218,10 @@ const DebugConsole = () => {
           <TabsTrigger value="performance">
             <Activity className="h-4 w-4 mr-2" />
             Performance
+          </TabsTrigger>
+          <TabsTrigger value="monitoring">
+            <Gauge className="h-4 w-4 mr-2" />
+            Live Monitoring
           </TabsTrigger>
           <TabsTrigger value="metrics">
             <Zap className="h-4 w-4 mr-2" />
@@ -469,6 +475,10 @@ const DebugConsole = () => {
           </div>
         </TabsContent>
 
+        <TabsContent value="monitoring">
+          <PerformanceMetrics />
+        </TabsContent>
+
         <TabsContent value="metrics">
           <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -543,6 +553,9 @@ const DebugConsole = () => {
           </div>
         </TabsContent>
       </Tabs>
+      
+      {/* Alert System - positioned fixed */}
+      <AlertSystem />
     </div>
   );
 };

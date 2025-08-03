@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { PerformanceMetrics } from "@/components/PerformanceMetrics";
 import { AlertSystem } from "@/components/AlertSystem";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { HistoricalAnalysis } from "@/components/HistoricalAnalysis";
 
 const DebugConsole = () => {
   const [selectedComponent, setSelectedComponent] = useState<string | undefined>(undefined);
@@ -227,6 +228,10 @@ const DebugConsole = () => {
           <TabsTrigger value="analytics">
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
+          </TabsTrigger>
+          <TabsTrigger value="historical">
+            <Clock className="h-4 w-4 mr-2" />
+            Historical Analysis
           </TabsTrigger>
           <TabsTrigger value="metrics">
             <Zap className="h-4 w-4 mr-2" />
@@ -486,6 +491,10 @@ const DebugConsole = () => {
 
         <TabsContent value="analytics">
           <AnalyticsDashboard />
+        </TabsContent>
+
+        <TabsContent value="historical">
+          <HistoricalAnalysis />
         </TabsContent>
 
         <TabsContent value="metrics">

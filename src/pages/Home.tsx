@@ -5,7 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
-import { Play, Sparkles, Activity, Brain, Code2, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Play, Sparkles, Activity, Brain, Code2, Loader2, CheckCircle, AlertCircle, BarChart3, Filter } from "lucide-react";
+import { PerformanceOptimization } from "@/components/PerformanceOptimization";
+import { CustomReportBuilder } from "@/components/CustomReportBuilder";
+import { AdvancedFiltering } from "@/components/AdvancedFiltering";
 import { 
   useTasks, 
   useCreateTask, 
@@ -392,6 +395,55 @@ const Home = () => {
               <span>Analytics</span>
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Advanced Features */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5" />
+              <span>Performance Optimization</span>
+            </CardTitle>
+            <CardDescription>
+              Monitor system performance and identify bottlenecks
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PerformanceOptimization />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Filter className="h-5 w-5" />
+              <span>Custom Report Builder</span>
+            </CardTitle>
+            <CardDescription>
+              Create custom reports with drag-and-drop interface
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CustomReportBuilder />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Advanced Filtering */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Filter className="h-5 w-5" />
+            <span>Advanced Search & Filtering</span>
+          </CardTitle>
+          <CardDescription>
+            Search across logs with complex queries and pattern detection
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AdvancedFiltering />
         </CardContent>
       </Card>
     </div>

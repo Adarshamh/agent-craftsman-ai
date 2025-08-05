@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase } from '@/integrations/supabase/client'
 
 // Database Types
 export interface Task {
@@ -6,22 +6,25 @@ export interface Task {
   user_id: string
   title: string
   description: string
-  model: string
-  status: 'pending' | 'executing' | 'completed' | 'failed'
-  result?: string
+  status: 'pending' | 'running' | 'completed' | 'failed'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  execution_time_ms?: number
   error_message?: string
+  metadata: any
   created_at: string
   updated_at: string
-  execution_time?: number
-  code_generated?: number
+  completed_at?: string
 }
 
 export interface KnowledgePattern {
   id: string
   user_id: string
   pattern_type: string
+  pattern_name: string
   pattern_data: any
+  description?: string
   usage_count: number
+  effectiveness_score?: number
   created_at: string
   updated_at: string
 }
@@ -29,23 +32,28 @@ export interface KnowledgePattern {
 export interface UserStats {
   id: string
   user_id: string
-  tasks_completed: number
-  code_generated: number
-  knowledge_base_size: number
-  success_rate: number
-  last_updated: string
+  total_tasks: number
+  completed_tasks: number
+  failed_tasks: number
+  total_execution_time_ms: number
+  average_response_time_ms?: number
+  error_rate: number
+  uptime_percentage: number
+  last_activity_at?: string
+  created_at: string
+  updated_at: string
 }
 
 // Monitoring Types
 export interface ExecutionLog {
   id: string
   user_id: string
-  task_id?: string
+  component: string
+  operation: string
   log_level: 'debug' | 'info' | 'warn' | 'error' | 'fatal'
   message: string
   metadata: any
-  component?: string
-  execution_context: any
+  execution_time_ms?: number
   created_at: string
 }
 
@@ -53,9 +61,9 @@ export interface SystemMetric {
   id: string
   user_id: string
   metric_type: string
-  metric_value: number
-  metric_unit?: string
-  component?: string
+  metric_name: string
+  value: number
+  unit?: string
   metadata: any
   created_at: string
 }
@@ -66,10 +74,8 @@ export interface PerformanceLog {
   operation_type: string
   operation_name: string
   duration_ms: number
-  status: 'success' | 'error' | 'timeout'
-  error_details?: string
-  input_size?: number
-  output_size?: number
+  memory_usage_mb?: number
+  cpu_usage_percent?: number
   metadata: any
   created_at: string
 }
@@ -93,11 +99,8 @@ export interface SessionLog {
   id: string
   user_id: string
   session_id: string
-  action: string
-  page_url?: string
-  user_agent?: string
-  ip_address?: string
-  metadata: any
+  event_type: string
+  event_data: any
   created_at: string
 }
 
@@ -205,7 +208,7 @@ export const updateUserStats = async (stats: Partial<UserStats>) => {
     .upsert({
       user_id: user.id,
       ...stats,
-      last_updated: new Date().toISOString()
+      updated_at: new Date().toISOString()
     })
     .select()
     .single()

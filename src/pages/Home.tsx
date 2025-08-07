@@ -64,8 +64,9 @@ const Home = () => {
       const task = await createTaskMutation.mutateAsync({
         title: prompt.length > 50 ? prompt.slice(0, 47) + "..." : prompt,
         description: prompt,
-        model: selectedModel,
-        status: 'executing'
+        status: 'running',
+        priority: 'medium',
+        metadata: { model: selectedModel }
       });
 
       // Simulate AI task execution
@@ -81,10 +82,12 @@ const Home = () => {
         id: task.id,
         updates: {
           status: isSuccess ? 'completed' : 'failed',
-          result: isSuccess ? 'Task completed successfully' : undefined,
           error_message: isSuccess ? undefined : 'Simulated execution error',
-          execution_time: Math.floor(executionTime),
-          code_generated: isSuccess ? codeGenerated : 0
+          execution_time_ms: Math.floor(executionTime),
+          metadata: {
+            result: isSuccess ? 'Task completed successfully' : undefined,
+            code_generated: isSuccess ? codeGenerated : 0
+          }
         }
       });
 
@@ -92,6 +95,7 @@ const Home = () => {
       if (isSuccess) {
         await addKnowledgePatternMutation.mutateAsync({
           pattern_type: selectedModel,
+          pattern_name: `${selectedModel}_pattern`,
           pattern_data: {
             prompt: prompt,
             model: selectedModel,
@@ -149,8 +153,9 @@ const Home = () => {
       const task = await createTaskMutation.mutateAsync({
         title: `${action} - Quick Action`,
         description: actionMessages[action as keyof typeof actionMessages],
-        model: 'system',
-        status: 'executing'
+        status: 'running',
+        priority: 'medium',
+        metadata: { model: 'system' }
       });
 
       // Simulate processing
@@ -166,9 +171,11 @@ const Home = () => {
         id: task.id,
         updates: {
           status: 'completed',
-          result: `${action} completed successfully`,
-          execution_time: Math.floor(executionTime),
-          code_generated: codeGenerated
+          execution_time_ms: Math.floor(executionTime),
+          metadata: {
+            result: `${action} completed successfully`,
+            code_generated: codeGenerated
+          }
         }
       });
 
@@ -176,6 +183,7 @@ const Home = () => {
       if (action === 'Train Model') {
         await addKnowledgePatternMutation.mutateAsync({
           pattern_type: 'training',
+          pattern_name: 'training_pattern',
           pattern_data: {
             action: action,
             model_improvements: Math.floor(Math.random() * 10 + 5),

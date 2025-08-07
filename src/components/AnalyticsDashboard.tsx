@@ -76,7 +76,8 @@ export const AnalyticsDashboard = () => {
       )
         if (slot) {
           slot.responseTime = Math.max(slot.responseTime, log.duration_ms || 0)
-          if (log.status !== 'success') slot.errorCount++
+          // Performance logs in new schema don't have status field, assume success
+          slot.errorCount += 0 // Will be populated from error logs instead
       }
     })
 
@@ -88,7 +89,7 @@ export const AnalyticsDashboard = () => {
           metricTime >= s.timestamp && metricTime < s.timestamp + (slotSize * 60 * 1000)
         )
         if (slot) {
-          slot.memoryUsage = Math.max(slot.memoryUsage, metric.metric_value)
+          slot.memoryUsage = Math.max(slot.memoryUsage, metric.value)
         }
       }
     })

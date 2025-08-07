@@ -136,20 +136,23 @@ export const usePerformanceMonitoring = () => {
         operation_type: 'performance_monitoring',
         operation_name: 'system_metrics',
         duration_ms: 0,
-        status: 'success',
         metadata: newMetrics
       })
 
       // Record individual metrics
       recordSystemMetric.mutate({
         metric_type: 'memory_usage',
-        metric_value: memory.percentage,
+        metric_name: 'memory_usage_percentage',
+        value: memory.percentage,
+        unit: 'percent',
         metadata: memory
       })
 
       recordSystemMetric.mutate({
         metric_type: 'frame_rate',
-        metric_value: currentFrameRate,
+        metric_name: 'frame_rate',
+        value: currentFrameRate,
+        unit: 'fps',
         metadata: { frameRate: currentFrameRate }
       })
 

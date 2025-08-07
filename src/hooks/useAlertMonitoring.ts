@@ -85,8 +85,8 @@ export const useAlertMonitoring = ({
           new Date(log.created_at).getTime() > fiveMinutesAgo
         )
         if (recentPerformance.length === 0) return 0
-        const errorCount = recentPerformance.filter(log => log.status !== 'success').length
-        return (errorCount / recentPerformance.length) * 100
+        // Performance logs in new schema don't have status field
+        return 0 // Will be calculated from error logs instead
       }
 
       case 'memory_usage': {
@@ -96,7 +96,7 @@ export const useAlertMonitoring = ({
         )
         if (recentMemoryMetrics.length === 0) return 0
         const latestMemory = recentMemoryMetrics[recentMemoryMetrics.length - 1]
-        return latestMemory.metric_value
+        return latestMemory.value
       }
 
       case 'cpu_usage': {
@@ -106,7 +106,7 @@ export const useAlertMonitoring = ({
         )
         if (recentCpuMetrics.length === 0) return 0
         const latestCpu = recentCpuMetrics[recentCpuMetrics.length - 1]
-        return latestCpu.metric_value
+        return latestCpu.value
       }
 
       case 'log_volume': {

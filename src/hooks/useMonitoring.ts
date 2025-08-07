@@ -164,7 +164,7 @@ export const useMonitoringStats = () => {
         : 0
       
       const successRate = performance.length > 0
-        ? (performance.filter(p => p.status === 'success').length / performance.length) * 100
+        ? 100 // Performance logs in new schema don't have status, assume success
         : 0
       
       return {

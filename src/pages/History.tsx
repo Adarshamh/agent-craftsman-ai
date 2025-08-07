@@ -47,7 +47,7 @@ const History = () => {
       filtered = filtered.filter(task => 
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.model?.toLowerCase().includes(searchQuery.toLowerCase())
+        ((task.metadata as any)?.model || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -55,19 +55,22 @@ const History = () => {
   }, [allTasks, filterPeriod, searchQuery]);
 
   // Convert database tasks to display format
-  const historyItems = filteredTasks.map(task => ({
-    id: task.id,
-    prompt: task.title,
-    response: task.result || task.error_message || "Task in progress...",
-    model: task.model || "Unknown",
-    tokens: Math.floor(Math.random() * 3000 + 500), // Simulated for now
-    duration: task.execution_time ? `${(task.execution_time / 1000).toFixed(1)}s` : "N/A",
-    timestamp: new Date(task.created_at).toLocaleString(),
-    status: task.status === 'completed' ? 'success' : 
-           task.status === 'failed' ? 'error' : 'pending',
-    rating: task.status === 'completed' ? Math.floor(Math.random() * 2 + 4) : 
-           task.status === 'failed' ? Math.floor(Math.random() * 2 + 1) : 3
-  }));
+  const historyItems = filteredTasks.map(task => {
+    const metadata = (task.metadata as any) || {}
+    return {
+      id: task.id,
+      prompt: task.title,
+      response: metadata.result || task.error_message || "Task in progress...",
+      model: metadata.model || "Unknown",
+      tokens: Math.floor(Math.random() * 3000 + 500), // Simulated for now
+      duration: task.execution_time_ms ? `${(task.execution_time_ms / 1000).toFixed(1)}s` : "N/A",
+      timestamp: new Date(task.created_at).toLocaleString(),
+      status: task.status === 'completed' ? 'success' : 
+             task.status === 'failed' ? 'error' : 'pending',
+      rating: task.status === 'completed' ? Math.floor(Math.random() * 2 + 4) : 
+             task.status === 'failed' ? Math.floor(Math.random() * 2 + 1) : 3
+    }
+  });
 
   // Calculate analytics
   const totalTasks = allTasks.length;
@@ -76,7 +79,7 @@ const History = () => {
   const avgRating = completedTasks > 0 ? 
     (historyItems.filter(h => h.status === 'success').reduce((sum, h) => sum + h.rating, 0) / completedTasks).toFixed(1) : 
     "0.0";
-  const totalTime = allTasks.reduce((sum, task) => sum + (task.execution_time || 0), 0);
+  const totalTime = allTasks.reduce((sum, task) => sum + (task.execution_time_ms || 0), 0);
   const totalTimeFormatted = totalTime > 0 ? `${Math.floor(totalTime / 3600000)}h ${Math.floor((totalTime % 3600000) / 60000)}m` : "0h 0m";
 
   const sessions = [

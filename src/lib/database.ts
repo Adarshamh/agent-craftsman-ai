@@ -455,10 +455,12 @@ export const createPerformanceWrapper = <T extends (...args: any[]) => Promise<a
           operation_type: operationType,
           operation_name: operationName,
           duration_ms: duration,
-          status: 'success',
-          input_size: JSON.stringify(args).length,
-          output_size: JSON.stringify(result).length,
-          metadata: { args_count: args.length }
+          metadata: { 
+            status: 'success',
+            input_size: JSON.stringify(args).length,
+            output_size: JSON.stringify(result).length,
+            args_count: args.length 
+          }
         }).catch(console.error)
         return result
       },
@@ -468,10 +470,12 @@ export const createPerformanceWrapper = <T extends (...args: any[]) => Promise<a
           operation_type: operationType,
           operation_name: operationName,
           duration_ms: duration,
-          status: 'error',
-          error_details: error.message,
-          input_size: JSON.stringify(args).length,
-          metadata: { args_count: args.length }
+          metadata: { 
+            status: 'error',
+            error_details: error.message,
+            input_size: JSON.stringify(args).length,
+            args_count: args.length 
+          }
         }).catch(console.error)
         throw error
       }
@@ -481,23 +485,47 @@ export const createPerformanceWrapper = <T extends (...args: any[]) => Promise<a
 
 export const logger = {
   debug: (message: string, component?: string, metadata?: any, taskId?: string) =>
-    logExecution({ log_level: 'debug', message, component, metadata: metadata || {}, execution_context: {}, task_id: taskId }),
+    logExecution({ 
+      log_level: 'debug', 
+      message, 
+      component: component || 'unknown', 
+      operation: 'debug_log',
+      metadata: { ...metadata, task_id: taskId } 
+    }),
   
   info: (message: string, component?: string, metadata?: any, taskId?: string) =>
-    logExecution({ log_level: 'info', message, component, metadata: metadata || {}, execution_context: {}, task_id: taskId }),
+    logExecution({ 
+      log_level: 'info', 
+      message, 
+      component: component || 'unknown', 
+      operation: 'info_log',
+      metadata: { ...metadata, task_id: taskId } 
+    }),
   
   warn: (message: string, component?: string, metadata?: any, taskId?: string) =>
-    logExecution({ log_level: 'warn', message, component, metadata: metadata || {}, execution_context: {}, task_id: taskId }),
+    logExecution({ 
+      log_level: 'warn', 
+      message, 
+      component: component || 'unknown', 
+      operation: 'warn_log',
+      metadata: { ...metadata, task_id: taskId } 
+    }),
   
   error: (message: string, component?: string, metadata?: any, taskId?: string, errorDetails?: any) => {
     // Log to execution logs
-    logExecution({ log_level: 'error', message, component, metadata: metadata || {}, execution_context: errorDetails || {}, task_id: taskId })
+    logExecution({ 
+      log_level: 'error', 
+      message, 
+      component: component || 'unknown', 
+      operation: 'error_log',
+      metadata: { ...metadata, task_id: taskId, error_details: errorDetails } 
+    })
     
     // Also log to error logs for centralized error tracking
     logError({
       error_type: 'application_error',
       error_message: message,
-      component,
+      component: component || 'unknown',
       severity: 'medium',
       resolved: false,
       stack_trace: errorDetails?.stack,
@@ -507,13 +535,19 @@ export const logger = {
   
   fatal: (message: string, component?: string, metadata?: any, taskId?: string, errorDetails?: any) => {
     // Log to execution logs
-    logExecution({ log_level: 'fatal', message, component, metadata: metadata || {}, execution_context: errorDetails || {}, task_id: taskId })
+    logExecution({ 
+      log_level: 'fatal', 
+      message, 
+      component: component || 'unknown', 
+      operation: 'fatal_log',
+      metadata: { ...metadata, task_id: taskId, error_details: errorDetails } 
+    })
     
     // Also log to error logs for centralized error tracking
     logError({
       error_type: 'fatal_error',
       error_message: message,
-      component,
+      component: component || 'unknown',
       severity: 'critical',
       resolved: false,
       stack_trace: errorDetails?.stack,

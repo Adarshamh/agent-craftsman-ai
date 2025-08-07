@@ -94,12 +94,13 @@ export const createTask = async (taskData: Omit<LegacyTask, 'id' | 'user_id' | '
   if (error) throw error
   
   // Map back to legacy format for compatibility
+  const metadata = (data.metadata as any) || {}
   return {
     ...data,
-    model: data.metadata?.model || '',
-    result: data.metadata?.result,
+    model: metadata.model || '',
+    result: metadata.result,
     execution_time: data.execution_time_ms,
-    code_generated: data.metadata?.code_generated || 0
+    code_generated: metadata.code_generated || 0
   }
 }
 
@@ -117,14 +118,17 @@ export const getTasks = async (limit = 10) => {
   if (error) throw error
   
   // Map to legacy format
-  return (data || []).map(task => ({
-    ...task,
-    model: task.metadata?.model || '',
-    result: task.metadata?.result,
-    execution_time: task.execution_time_ms,
-    code_generated: task.metadata?.code_generated || 0,
-    status: task.status === 'running' ? 'executing' : task.status
-  }))
+  return (data || []).map(task => {
+    const metadata = (task.metadata as any) || {}
+    return {
+      ...task,
+      model: metadata.model || '',
+      result: metadata.result,
+      execution_time: task.execution_time_ms,
+      code_generated: metadata.code_generated || 0,
+      status: task.status === 'running' ? 'executing' : task.status
+    }
+  })
 }
 
 export const updateTask = async (id: string, updates: Partial<LegacyTask>) => {
@@ -149,12 +153,13 @@ export const updateTask = async (id: string, updates: Partial<LegacyTask>) => {
 
   if (error) throw error
   
+  const metadata = (data.metadata as any) || {}
   return {
     ...data,
-    model: data.metadata?.model || '',
-    result: data.metadata?.result,
+    model: metadata.model || '',
+    result: metadata.result,
     execution_time: data.execution_time_ms,
-    code_generated: data.metadata?.code_generated || 0
+    code_generated: metadata.code_generated || 0
   }
 }
 
@@ -229,12 +234,15 @@ export const getTaskAnalytics = async (days = 7) => {
   if (error) throw error
   
   // Map to legacy format
-  return (data || []).map(task => ({
-    status: task.status === 'running' ? 'executing' : task.status,
-    created_at: task.created_at,
-    execution_time: task.execution_time_ms,
-    code_generated: task.metadata?.code_generated || 0
-  }))
+  return (data || []).map(task => {
+    const metadata = (task.metadata as any) || {}
+    return {
+      status: task.status === 'running' ? 'executing' : task.status,
+      created_at: task.created_at,
+      execution_time: task.execution_time_ms,
+      code_generated: metadata.code_generated || 0
+    }
+  })
 }
 
 // Legacy monitoring functions with field mapping
@@ -258,12 +266,15 @@ export const getSystemMetrics = async (metricType?: string, hours = 24) => {
   if (error) throw error
   
   // Map to legacy format
-  return (data || []).map(metric => ({
-    ...metric,
-    metric_value: metric.value,
-    metric_unit: metric.unit,
-    component: metric.metadata?.component
-  }))
+  return (data || []).map(metric => {
+    const metadata = (metric.metadata as any) || {}
+    return {
+      ...metric,
+      metric_value: metric.value,
+      metric_unit: metric.unit,
+      component: metadata.component
+    }
+  })
 }
 
 export const getPerformanceLogs = async (operationType?: string, limit = 100) => {
@@ -283,12 +294,15 @@ export const getPerformanceLogs = async (operationType?: string, limit = 100) =>
   if (error) throw error
   
   // Map to legacy format - add status field based on data
-  return (data || []).map(log => ({
-    ...log,
-    status: 'success' as const, // Default to success since new schema doesn't have status
-    input_size: log.metadata?.input_size,
-    output_size: log.metadata?.output_size
-  }))
+  return (data || []).map(log => {
+    const metadata = (log.metadata as any) || {}
+    return {
+      ...log,
+      status: 'success' as const, // Default to success since new schema doesn't have status
+      input_size: metadata.input_size,
+      output_size: metadata.output_size
+    }
+  })
 }
 
 export const getExecutionLogs = async (limit = 50, component?: string, logLevel?: string) => {
@@ -309,11 +323,14 @@ export const getExecutionLogs = async (limit = 50, component?: string, logLevel?
   if (error) throw error
   
   // Map to legacy format
-  return (data || []).map(log => ({
-    ...log,
-    task_id: log.metadata?.task_id,
-    execution_context: log.metadata
-  }))
+  return (data || []).map(log => {
+    const metadata = (log.metadata as any) || {}
+    return {
+      ...log,
+      task_id: metadata.task_id,
+      execution_context: metadata
+    }
+  })
 }
 
 // Re-export other functions that are compatible

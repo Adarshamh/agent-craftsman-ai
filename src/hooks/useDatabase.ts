@@ -147,16 +147,19 @@ export const useRealtimeStats = () => {
   useEffect(() => {
     if (userStats || tasks || patterns) {
       const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0
-      const totalCodeGenerated = tasks?.reduce((sum, task) => sum + (task.code_generated || 0), 0) || 0
+      const totalCodeGenerated = tasks?.reduce((sum, task) => {
+        const metadata = (task.metadata as any) || {}
+        return sum + (metadata.code_generated || 0)
+      }, 0) || 0
       const successfulTasks = tasks?.filter(t => t.status === 'completed').length || 0
       const totalTasks = tasks?.length || 0
       const successRate = totalTasks > 0 ? (successfulTasks / totalTasks) * 100 : 0
 
       setStats({
-        tasksCompleted: userStats?.tasks_completed || completedTasks,
-        codeGenerated: userStats?.code_generated || totalCodeGenerated,
-        knowledgeBase: userStats?.knowledge_base_size || patterns?.length || 0,
-        successRate: userStats?.success_rate || successRate
+        tasksCompleted: userStats?.completed_tasks || completedTasks,
+        codeGenerated: totalCodeGenerated,
+        knowledgeBase: patterns?.length || 0,
+        successRate: userStats?.total_tasks > 0 ? (userStats.completed_tasks / userStats.total_tasks) * 100 : successRate
       })
     }
   }, [userStats, tasks, patterns])

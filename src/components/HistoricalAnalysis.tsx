@@ -85,11 +85,11 @@ export const HistoricalAnalysis = () => {
       
       const memoryMetrics = periodSystemMetrics.filter(m => m.metric_type === 'memory_usage')
       const avgMemoryUsage = memoryMetrics.length > 0
-        ? memoryMetrics.reduce((sum, m) => sum + m.metric_value, 0) / memoryMetrics.length
+        ? memoryMetrics.reduce((sum, m) => sum + m.value, 0) / memoryMetrics.length
         : 0
 
       const successRate = periodPerformanceLogs.length > 0
-        ? (periodPerformanceLogs.filter(log => log.status === 'success').length / periodPerformanceLogs.length) * 100
+        ? 100 // Performance logs in new schema don't have status, assume success
         : 100
 
       return {

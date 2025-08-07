@@ -12,6 +12,8 @@ import {
   Bot,
   LogOut,
   User,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -116,6 +118,38 @@ const Layout = () => {
           <Outlet />
         </main>
       </div>
+      
+      {/* Footer */}
+      <footer className="border-t border-border bg-card mt-8">
+        <div className="px-6 py-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <div className="text-center md:text-left">
+                <h3 className="text-lg font-semibold text-foreground mb-2">Contact Us</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center md:justify-start space-x-2 text-muted-foreground">
+                    <Mail className="h-4 w-4" />
+                    <a href="mailto:adarshhadli96@gmail.com" className="hover:text-primary transition-colors">
+                      adarshhadli96@gmail.com
+                    </a>
+                  </div>
+                  <div className="flex items-center justify-center md:justify-start space-x-2 text-muted-foreground">
+                    <Phone className="h-4 w-4" />
+                    <a href="tel:+919591774109" className="hover:text-primary transition-colors">
+                      +91 9591774109
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <div className="text-center md:text-right">
+                <p className="text-sm text-muted-foreground">
+                  © 2024 AI Agent. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

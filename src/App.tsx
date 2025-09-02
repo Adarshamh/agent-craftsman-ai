@@ -14,6 +14,7 @@ import History from "./pages/History";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { AIAgent } from "./pages/AIAgent";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
@@ -34,6 +35,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route index element={<Home />} />
+              <Route path="ai-agent" element={<AIAgent />} />
               <Route path="prompt-studio" element={<PromptStudio />} />
               <Route path="debug-console" element={<DebugConsole />} />
               <Route path="codegen-lab" element={<CodegenLab />} />

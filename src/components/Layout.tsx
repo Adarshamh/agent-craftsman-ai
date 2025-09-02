@@ -32,6 +32,7 @@ const Layout = () => {
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: Home },
+    { name: "AI Agent", href: "/ai-agent", icon: Bot },
     { name: "Prompt Studio", href: "/prompt-studio", icon: MessageSquare },
     { name: "Debug Console", href: "/debug-console", icon: Bug },
     { name: "Codegen Lab", href: "/codegen-lab", icon: Code2 },

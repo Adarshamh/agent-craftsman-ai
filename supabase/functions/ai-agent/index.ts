@@ -5,7 +5,158 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
+
+// Self-improving AI functions
+async function storeKnowledgePattern(
+  supabase: any, 
+  userId: string, 
+  executionType: string, 
+  prompt: string, 
+  result: string, 
+  confidence: number, 
+  context?: any
+) {
+  if (confidence < 0.6) return // Only store high-confidence patterns
+  
+  // Check if similar pattern exists
+  const { data: existingPatterns } = await supabase
+    .from('knowledge_patterns')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('pattern_type', executionType)
+    .gte('effectiveness_score', 0.5)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  const patternData = {
+    prompt_structure: extractPromptStructure(prompt),
+    execution_type: executionType,
+    response_quality: analyzeResponseQuality(result),
+    context_used: context ? Object.keys(context) : [],
+    success_indicators: extractSuccessIndicators(result, confidence)
+  }
+
+  // Either update existing pattern or create new one
+  if (existingPatterns && existingPatterns.length > 0) {
+    const bestPattern = existingPatterns[0]
+    if (confidence > bestPattern.effectiveness_score) {
+      await supabase
+        .from('knowledge_patterns')
+        .update({
+          effectiveness_score: (bestPattern.effectiveness_score + confidence) / 2,
+          pattern_data: { ...bestPattern.pattern_data, ...patternData },
+          usage_count: bestPattern.usage_count + 1,
+          optimization_score: calculateOptimizationScore(confidence, bestPattern.effectiveness_score)
+        })
+        .eq('id', bestPattern.id)
+    }
+  } else {
+    await supabase
+      .from('knowledge_patterns')
+      .insert({
+        user_id: userId,
+        pattern_type: executionType,
+        pattern_name: `Optimized ${executionType} Pattern`,
+        description: `Self-learned pattern for ${executionType} with ${(confidence * 100).toFixed(1)}% success rate`,
+        pattern_data: patternData,
+        effectiveness_score: confidence,
+        usage_count: 1,
+        optimization_score: confidence
+      })
+  }
+}
+
+async function generateTaskFeedback(result: string, confidence: number, executionTime: number, executionType: string) {
+  const feedback = {
+    performance_score: confidence,
+    execution_time_ms: executionTime,
+    efficiency_rating: executionTime < 3000 ? 'high' : executionTime < 8000 ? 'medium' : 'low',
+    quality_indicators: {
+      completeness: result.length > 100 ? 'complete' : 'partial',
+      coherence: confidence > 0.8 ? 'high' : confidence > 0.5 ? 'medium' : 'low',
+      relevance: analyzeRelevance(result, executionType)
+    },
+    suggestions: generateImprovementSuggestions(confidence, executionTime, executionType),
+    learning_opportunities: identifyLearningOpportunities(result, confidence)
+  }
+  
+  return feedback
+}
+
+function extractPromptStructure(prompt: string) {
+  return {
+    length: prompt.length,
+    has_context: prompt.includes('context:') || prompt.includes('background:'),
+    has_constraints: prompt.includes('constraint') || prompt.includes('requirement'),
+    complexity: prompt.split(' ').length > 50 ? 'high' : prompt.split(' ').length > 20 ? 'medium' : 'low'
+  }
+}
+
+function analyzeResponseQuality(result: string) {
+  return {
+    length: result.length,
+    structure: result.includes('\n') ? 'structured' : 'linear',
+    completeness: result.length > 200 ? 'comprehensive' : result.length > 50 ? 'adequate' : 'brief'
+  }
+}
+
+function extractSuccessIndicators(result: string, confidence: number) {
+  return {
+    confidence_level: confidence,
+    response_coherence: result.split('.').length > 2 ? 'high' : 'medium',
+    actionable_content: result.toLowerCase().includes('step') || result.toLowerCase().includes('action')
+  }
+}
+
+function calculateOptimizationScore(newConfidence: number, oldConfidence: number) {
+  return Math.min(1.0, (newConfidence + oldConfidence) / 2 + 0.1)
+}
+
+function analyzeRelevance(result: string, executionType: string) {
+  const keywords = {
+    analysis: ['analyze', 'data', 'pattern', 'insight'],
+    generation: ['create', 'generate', 'build', 'develop'],
+    problem_solving: ['solve', 'solution', 'approach', 'method'],
+    optimization: ['optimize', 'improve', 'enhance', 'efficient']
+  }
+  
+  const relevantKeywords = keywords[executionType as keyof typeof keywords] || []
+  const matchCount = relevantKeywords.filter(keyword => 
+    result.toLowerCase().includes(keyword)
+  ).length
+  
+  return matchCount > 0 ? 'high' : 'medium'
+}
+
+function generateImprovementSuggestions(confidence: number, executionTime: number, executionType: string) {
+  const suggestions = []
+  
+  if (confidence < 0.7) {
+    suggestions.push('Consider providing more specific context or constraints')
+  }
+  if (executionTime > 8000) {
+    suggestions.push('Try breaking complex tasks into smaller subtasks')
+  }
+  if (executionType === 'analysis' && confidence < 0.8) {
+    suggestions.push('Include relevant data sources or examples for better analysis')
+  }
+  
+  return suggestions
+}
+
+function identifyLearningOpportunities(result: string, confidence: number) {
+  const opportunities = []
+  
+  if (confidence > 0.8) {
+    opportunities.push('Pattern recognition: High-success approach identified')
+  }
+  if (result.length > 500) {
+    opportunities.push('Comprehensive response structure learned')
+  }
+  
+  return opportunities
+}
 
 interface TaskExecutionRequest {
   taskId?: string;
@@ -73,17 +224,24 @@ serve(async (req) => {
     // Execute AI task with optimized parameters based on execution type
     const result = await executeAITask(openAIApiKey, contextPrompt, executionType);
     
-    // Extract and store new knowledge patterns
-    const knowledgePatterns = extractKnowledgePatterns(result, executionType);
+    // Enhanced learning: Store and optimize knowledge patterns
+    await storeKnowledgePattern(supabase, user.id, executionType, prompt, result.content, result.confidence, context)
     
-    // Update task in database if taskId provided
-    if (taskId) {
-      await updateTaskWithResults(supabase, taskId, result, user.id);
-    }
+    // Generate task feedback for continuous improvement
+    const feedback = await generateTaskFeedback(result.content, result.confidence, result.executionTime, executionType)
     
-    // Store new knowledge patterns
-    if (knowledgePatterns.length > 0) {
-      await storeKnowledgePatterns(supabase, knowledgePatterns, user.id);
+    // Store task feedback
+    if (feedback) {
+      await supabase
+        .from('task_feedback')
+        .insert({
+          user_id: user.id,
+          task_id: taskId || crypto.randomUUID(),
+          feedback_type: 'performance',
+          feedback_data: feedback,
+          confidence_score: result.confidence,
+          suggestions: feedback.suggestions || []
+        })
     }
     
     // Update user stats

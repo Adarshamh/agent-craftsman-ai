@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -97,37 +97,49 @@ export type Database = {
       }
       knowledge_patterns: {
         Row: {
+          avg_execution_time_ms: number | null
           created_at: string
           description: string | null
           effectiveness_score: number | null
           id: string
+          last_used_at: string | null
+          optimization_score: number | null
           pattern_data: Json
           pattern_name: string
           pattern_type: string
+          success_rate: number | null
           updated_at: string
           usage_count: number
           user_id: string
         }
         Insert: {
+          avg_execution_time_ms?: number | null
           created_at?: string
           description?: string | null
           effectiveness_score?: number | null
           id?: string
+          last_used_at?: string | null
+          optimization_score?: number | null
           pattern_data: Json
           pattern_name: string
           pattern_type: string
+          success_rate?: number | null
           updated_at?: string
           usage_count?: number
           user_id: string
         }
         Update: {
+          avg_execution_time_ms?: number | null
           created_at?: string
           description?: string | null
           effectiveness_score?: number | null
           id?: string
+          last_used_at?: string | null
+          optimization_score?: number | null
           pattern_data?: Json
           pattern_name?: string
           pattern_type?: string
+          success_rate?: number | null
           updated_at?: string
           usage_count?: number
           user_id?: string
@@ -166,6 +178,176 @@ export type Database = {
           metadata?: Json | null
           operation_name?: string
           operation_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          exam_preparation: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exam_preparation?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exam_preparation?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_questions: {
+        Row: {
+          correct_answer: number
+          created_at: string
+          difficulty: string
+          explanation: string
+          id: string
+          options: Json
+          question: string
+          question_id: string
+          quiz_type: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          correct_answer: number
+          created_at?: string
+          difficulty: string
+          explanation: string
+          id?: string
+          options: Json
+          question: string
+          question_id: string
+          quiz_type: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          correct_answer?: number
+          created_at?: string
+          difficulty?: string
+          explanation?: string
+          id?: string
+          options?: Json
+          question?: string
+          question_id?: string
+          quiz_type?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quiz_results: {
+        Row: {
+          accuracy: number
+          answers: Json
+          completed_at: string
+          created_at: string
+          id: string
+          questions: Json
+          quiz_title: string
+          quiz_type: string
+          score: number
+          session_id: string
+          time_spent: number
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          accuracy: number
+          answers: Json
+          completed_at?: string
+          created_at?: string
+          id?: string
+          questions: Json
+          quiz_title: string
+          quiz_type: string
+          score: number
+          session_id: string
+          time_spent: number
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          accuracy?: number
+          answers?: Json
+          completed_at?: string
+          created_at?: string
+          id?: string
+          questions?: Json
+          quiz_title?: string
+          quiz_type?: string
+          score?: number
+          session_id?: string
+          time_spent?: number
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_sessions: {
+        Row: {
+          answers: Json
+          created_at: string
+          current_question_index: number
+          end_time: string | null
+          id: string
+          is_completed: boolean
+          questions: Json
+          quiz_title: string
+          quiz_type: string
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          current_question_index?: number
+          end_time?: string | null
+          id?: string
+          is_completed?: boolean
+          questions: Json
+          quiz_title: string
+          quiz_type: string
+          start_time?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          current_question_index?: number
+          end_time?: string | null
+          id?: string
+          is_completed?: boolean
+          questions?: Json
+          quiz_title?: string
+          quiz_type?: string
+          start_time?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -230,6 +412,39 @@ export type Database = {
         }
         Relationships: []
       }
+      task_feedback: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          feedback_data: Json
+          feedback_type: string
+          id: string
+          suggestions: string[] | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          feedback_data?: Json
+          feedback_type?: string
+          id?: string
+          suggestions?: string[] | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          feedback_data?: Json
+          feedback_type?: string
+          id?: string
+          suggestions?: string[] | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           completed_at: string | null
@@ -270,6 +485,54 @@ export type Database = {
           priority?: string
           status?: string
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          average_accuracy: number
+          average_time_per_question: number
+          best_score: number
+          created_at: string
+          id: string
+          last_attempt_at: string | null
+          quiz_type: string
+          streak_count: number
+          total_attempts: number
+          total_correct: number
+          total_questions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          average_accuracy?: number
+          average_time_per_question?: number
+          best_score?: number
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          quiz_type: string
+          streak_count?: number
+          total_attempts?: number
+          total_correct?: number
+          total_questions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          average_accuracy?: number
+          average_time_per_question?: number
+          best_score?: number
+          created_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          quiz_type?: string
+          streak_count?: number
+          total_attempts?: number
+          total_correct?: number
+          total_questions?: number
           updated_at?: string
           user_id?: string
         }

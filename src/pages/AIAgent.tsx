@@ -2,6 +2,8 @@ import React from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AITaskInterface } from '@/components/AITaskInterface'
 import { SmartTaskCreator } from '@/components/SmartTaskCreator'
+import { SelfImprovementDashboard } from '@/components/SelfImprovementDashboard'
+import { RealTimeImprovementMonitor } from '@/components/RealTimeImprovementMonitor'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useKnowledgePatterns, useUserStats, useTaskAnalytics } from '@/hooks/useDatabase'
 import { Badge } from '@/components/ui/badge'
@@ -34,7 +36,9 @@ export const AIAgent: React.FC = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <RealTimeImprovementMonitor />
+          
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -108,7 +112,7 @@ export const AIAgent: React.FC = () => {
 
         {/* Main Interface */}
         <Tabs defaultValue="interface" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="interface" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               AI Interface
@@ -116,6 +120,10 @@ export const AIAgent: React.FC = () => {
             <TabsTrigger value="creator" className="flex items-center gap-2">
               <Target className="h-4 w-4" />
               Smart Creator
+            </TabsTrigger>
+            <TabsTrigger value="improvement" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Self-Improvement
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
@@ -129,6 +137,10 @@ export const AIAgent: React.FC = () => {
 
           <TabsContent value="creator" className="space-y-6">
             <SmartTaskCreator />
+          </TabsContent>
+
+          <TabsContent value="improvement" className="space-y-6">
+            <SelfImprovementDashboard />
           </TabsContent>
 
           <TabsContent value="knowledge" className="space-y-6">

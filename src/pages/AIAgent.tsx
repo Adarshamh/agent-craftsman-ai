@@ -4,11 +4,13 @@ import { AITaskInterface } from '@/components/AITaskInterface'
 import { SmartTaskCreator } from '@/components/SmartTaskCreator'
 import { SelfImprovementDashboard } from '@/components/SelfImprovementDashboard'
 import { RealTimeImprovementMonitor } from '@/components/RealTimeImprovementMonitor'
+import { LivePerformanceMetrics } from '@/components/LivePerformanceMetrics'
+import { RealTimeTaskMonitor } from '@/components/RealTimeTaskMonitor'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useKnowledgePatterns, useUserStats, useTaskAnalytics } from '@/hooks/useDatabase'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Brain, TrendingUp, Database, Clock, Target, Lightbulb } from 'lucide-react'
+import { Brain, TrendingUp, Database, Clock, Target, Lightbulb, Activity } from 'lucide-react'
 
 export const AIAgent: React.FC = () => {
   const { data: knowledgePatterns } = useKnowledgePatterns()
@@ -112,7 +114,7 @@ export const AIAgent: React.FC = () => {
 
         {/* Main Interface */}
         <Tabs defaultValue="interface" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="interface" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               AI Interface
@@ -124,6 +126,10 @@ export const AIAgent: React.FC = () => {
             <TabsTrigger value="improvement" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Self-Improvement
+            </TabsTrigger>
+            <TabsTrigger value="realtime" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Real-time
             </TabsTrigger>
             <TabsTrigger value="knowledge" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
@@ -141,6 +147,11 @@ export const AIAgent: React.FC = () => {
 
           <TabsContent value="improvement" className="space-y-6">
             <SelfImprovementDashboard />
+          </TabsContent>
+
+          <TabsContent value="realtime" className="space-y-6">
+            <LivePerformanceMetrics />
+            <RealTimeTaskMonitor />
           </TabsContent>
 
           <TabsContent value="knowledge" className="space-y-6">

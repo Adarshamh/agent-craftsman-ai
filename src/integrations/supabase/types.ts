@@ -182,6 +182,39 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_monitoring: {
+        Row: {
+          created_at: string
+          execution_time_ms: number
+          id: string
+          operation_type: string
+          success_rate: number
+          throughput_per_hour: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          execution_time_ms: number
+          id?: string
+          operation_type: string
+          success_rate?: number
+          throughput_per_hour?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          execution_time_ms?: number
+          id?: string
+          operation_type?: string
+          success_rate?: number
+          throughput_per_hour?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -348,6 +381,33 @@ export type Database = {
           quiz_type?: string
           start_time?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      real_time_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_type: string
+          metric_value: number
+          timestamp: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          metric_value: number
+          timestamp?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          metric_value?: number
+          timestamp?: string
           user_id?: string
         }
         Relationships: []
